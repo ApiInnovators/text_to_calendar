@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Text to Calendar</string>
+    <string name="error_trying_to_create_event">Error trying to create Event: %1$s</string>
+    <string name="no_value_found">No event found in text</string>
+    <string name="full_description">%1$s\n\nOriginal Text: \n %2$s</string>
+    <string name="no_text_entered">No text was entered</string>
+</resources>
