@@ -14,15 +14,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TextToCalendar"
         tools:targetApi="34">
-        <activity android:name=".SettingsActivitiy"
-            android:parentActivityName=".MainActivity">
+        <activity android:name="de.nielstron.texttocalendar.SettingsActivitiy"
+            android:parentActivityName="de.nielstron.texttocalendar.MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".MainActivity"/>
+                android:value="de.nielstron.texttocalendar.MainActivity"/>
         </activity>
         <activity
             android:label="@string/share_name"
-            android:name=".MainActivity"
+            android:name="de.nielstron.texttocalendar.MainActivity"
             android:exported="true">
 
             <!-- Your existing intent filters -->

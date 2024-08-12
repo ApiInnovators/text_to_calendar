@@ -1,4 +1,4 @@
-package com.example.texttocalendar
+package de.nielstron.texttocalendar
 
 import android.content.res.Resources
 import android.os.Bundle
@@ -44,6 +44,11 @@ class SettingsActivitiy : AppCompatActivity() {
         }
     }
 
+    override fun onDestroy() {
+        saveSettings()
+        super.onDestroy()
+    }
+
     private fun loadSettings() {
         val userConfig = Resources.getSystem().configuration
         val userLangs = userConfig.locales.toLanguageTags()
@@ -54,17 +59,19 @@ class SettingsActivitiy : AppCompatActivity() {
         keepLanguageFor.setText(sharedPrefs.getString("keepLanguageFor", userLangs))
         modelEdit.setText(sharedPrefs.getString("model", "gpt-4o-mini"))
         endpointEdit.setText(sharedPrefs.getString("endpoint", "https://api.openai.com/v1"))
-        apiKeyEdit.setText(sharedPrefs.getString("apiKey", "**************"))
+        apiKeyEdit.setText(sharedPrefs.getString("apiKey", null))
     }
 
     private fun saveSettings() {
         val sharedPrefs = getSharedPreferences("MyAppPrefs", MODE_PRIVATE)
+        val apiKeyContent = apiKeyEdit.text.toString()
         with(sharedPrefs.edit()) {
             putBoolean("forceJson", forceJsonSwitch.isChecked)
             putString("autoTranslateTo", autoTranslateTo.text.toString())
             putString("keepLanguageFor", keepLanguageFor.text.toString())
+            putString("model", modelEdit.text.toString())
             putString("endpoint", endpointEdit.text.toString())
-            putString("apiKey", apiKeyEdit.text.toString())
+            putString("apiKey", if (apiKeyContent.equals("null") || apiKeyContent.equals("")) null else apiKeyContent)
             apply()
         }
     }

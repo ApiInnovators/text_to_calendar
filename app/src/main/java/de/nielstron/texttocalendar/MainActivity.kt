@@ -1,6 +1,7 @@
-package com.example.texttocalendar
+package de.nielstron.texttocalendar
 
 import android.content.Intent
+import android.content.res.Resources
 import android.os.Bundle
 import android.provider.CalendarContract
 import android.view.Menu
@@ -116,26 +117,38 @@ class MainActivity : AppCompatActivity() {
             throw Exception(getString(R.string.no_text_entered))
         }
         val sharedPrefs = getSharedPreferences("MyAppPrefs", MODE_PRIVATE)
-        val defaultKey = BuildConfig.DEFAULT_API_KEY
-        val apiKey = sharedPrefs.getString("apiKey", defaultKey)
-        val model = OpenAiChatModel.builder()
+        val defaultEndpoint = "https://api.openai.com/v1"
+        val endpoint = sharedPrefs.getString("endpoint", defaultEndpoint)
+        val defaultKey = (if (endpoint.equals(defaultEndpoint)) BuildConfig.DEFAULT_API_KEY else null)
+        val apiKey = sharedPrefs.getString("apiKey", null) ?: defaultKey
+        var modelBuilder = OpenAiChatModel.builder()
             .apiKey(apiKey)
-            .modelName("gpt-4o-mini")
-            .responseFormat("json_object")
-            .build()
+            .modelName(sharedPrefs.getString("model", "gpt-4o-mini"))
+            .baseUrl(endpoint)
+        if(sharedPrefs.getBoolean("forceJson", true)){
+            modelBuilder = modelBuilder.responseFormat("json_object")
+        }
+        val model = modelBuilder.build()
 
         // Get the current date in ISO 8601 format
         val date = LocalDateTime.now()
         val today = date.toString()
         val tomorrow = date.plusDays(1).toString()
 
+        // get langs settings
+        val userConfig = Resources.getSystem().configuration
+        val userLangs = userConfig.locales.toLanguageTags()
+        val userLang = userConfig.locales[0].displayLanguage
+        val keepLangs = sharedPrefs.getString("keepLanguageFor", userLangs)
+        val autoTranslateTo = sharedPrefs.getString("autoTranslateTo", userLang)
+
         val prompt = """
             You are an expert at extracting calendar event details from a text.
             Provide the result in JSON format with fields: title, summary, location, startTime, endTime (both in ISO 8601 format).
             If a field is not present, omit it from the response. Do not include fields that can not be derived from the text.
             Keep the summary very short and concise, the full original text will also be provided.
-            The following languages can be kept for the description: EN, DE.
-            Otherwise translate to EN.
+            The following languages can be kept for the description: ${keepLangs}.
+            Otherwise translate to ${autoTranslateTo}.
             If there is no event in the text, return an empty JSON object.
             Today is $today
             Here are some examples:

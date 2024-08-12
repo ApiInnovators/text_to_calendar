@@ -12,7 +12,7 @@ val apikeyProperties = Properties()
 apikeyProperties.load(FileInputStream(apikeyPropertiesFile))
 
 android {
-    namespace = "com.example.texttocalendar"
+    namespace = "de.nielstron.texttocalendar"
     compileSdk = 34
 
     buildFeatures {
@@ -20,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.texttocalendar"
+        applicationId = "de.nielstron.texttocalendar"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
