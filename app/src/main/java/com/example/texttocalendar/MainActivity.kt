@@ -72,10 +72,17 @@ class MainActivity : AppCompatActivity() {
         // Check if the app was launched from a share intent
         if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
             val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
-            enteredText.setText(sharedText)
             if (sharedText != null) {
+                enteredText.setText(sharedText)
                 extractEventAndOpenCalendar(sharedText, backbut, progressBar, errorText)
+            } else {
+                errorText.setText(getString(R.string.error_no_shared_text))
             }
+        }
+        else if (intent?.action == Intent.ACTION_PROCESS_TEXT) {
+            val sharedText = intent.getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT).toString()
+            enteredText.setText(sharedText)
+            extractEventAndOpenCalendar(sharedText, backbut, progressBar, errorText)
         }
     }
 
