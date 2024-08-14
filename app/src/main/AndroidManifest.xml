@@ -14,6 +14,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TextToCalendar"
         tools:targetApi="34">
+        <!-- Sample AdMob app ID: ca-app-pub-3940256099942544~3347511713 -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-2079363477505727~6268251910"/>
         <activity android:name="de.nielstron.texttocalendar.SettingsActivitiy"
             android:parentActivityName="de.nielstron.texttocalendar.MainActivity">
             <meta-data

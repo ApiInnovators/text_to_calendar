@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:ads="http://schemas.android.com/apk/res-auto"
     android:id="@+id/enteredText"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -10,15 +11,15 @@
 
     <EditText
         android:id="@+id/editTextText"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_width="373dp"
+        android:layout_height="188dp"
         android:ems="10"
         android:gravity="center|top"
         android:hint="Enter natural language event description"
         android:inputType="textMultiLine"
         app:layout_constraintBottom_toTopOf="@+id/createEventButton"
         app:layout_constraintEnd_toEndOf="@+id/createEventButton"
-        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -29,9 +30,9 @@
         android:text="Create Event"
         app:layout_constraintBottom_toTopOf="@+id/progressBar"
         app:layout_constraintEnd_toEndOf="@+id/progressBar"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/editTextText" />
-
 
     <ProgressBar
         android:id="@+id/progressBar"
@@ -48,10 +49,21 @@
         android:id="@+id/errorText"
         android:layout_width="372dp"
         android:layout_height="0dp"
-        android:layout_marginBottom="195dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/adView"
+        app:layout_constraintEnd_toEndOf="@+id/createEventButton"
         app:layout_constraintTop_toBottomOf="@+id/progressBar" />
+
+    <com.google.android.gms.ads.AdView
+        app:layout_constraintTop_toBottomOf="@+id/errorText"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/createEventButton"
+        android:id="@+id/adView"
+        android:layout_width="371dp"
+        android:layout_height="91dp"
+        tools:layout_editor_absoluteX="3dp"
+        tools:layout_editor_absoluteY="591dp"
+        ads:adSize="BANNER"
+        ads:adUnitId="ca-app-pub-2079363477505727/7557282852" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
