@@ -23,8 +23,8 @@ android {
         applicationId = "de.nielstron.texttocalendar"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 1_1
+        versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "DEFAULT_API_KEY", apikeyProperties.getProperty("DEFAULT_API_KEY"))
