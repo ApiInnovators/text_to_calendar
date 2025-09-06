@@ -14,8 +14,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.MobileAds
-import dev.langchain4j.data.message.UserMessage
-import dev.langchain4j.model.openai.OpenAiChatModel
+// import dev.langchain4j.data.message.UserMessage
+// import dev.langchain4j.model.openai.OpenAiChatModel
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -135,14 +135,10 @@ class MainActivity : AppCompatActivity() {
         val endpoint = sharedPrefs.getString("endpoint", defaultEndpoint)
         val defaultKey = (if (endpoint.equals(defaultEndpoint)) BuildConfig.DEFAULT_API_KEY else null)
         val apiKey = sharedPrefs.getString("apiKey", null) ?: defaultKey
-        var modelBuilder = OpenAiChatModel.builder()
-            .apiKey(apiKey)
-            .modelName(sharedPrefs.getString("model", "gpt-4o-mini"))
-            .baseUrl(endpoint)
-        if(sharedPrefs.getBoolean("forceJson", true)){
-            modelBuilder = modelBuilder.responseFormat("json_object")
-        }
-        val model = modelBuilder.build()
+        val openAiService = OpenAiService(
+            baseUrl = endpoint!!,
+            apiKey = apiKey!!
+        )
 
         // Get the current date in ISO 8601 format
         val date = LocalDateTime.now()
@@ -226,7 +222,11 @@ class MainActivity : AppCompatActivity() {
             ```
         """.trimIndent()
 
-        val response: String = model.generate(UserMessage(prompt)).content().text()
+        val response: String = openAiService.chatCompletion(
+            model = sharedPrefs.getString("model", "gpt-4o-mini")!!,
+            prompt = prompt,
+            forceJson = sharedPrefs.getBoolean("forceJson", true)
+        )
         if (response.trim().equals("{}")) {
             throw Exception(getString(R.string.no_value_found))
         }
