@@ -131,7 +131,7 @@ class MainActivity : AppCompatActivity() {
             throw Exception(getString(R.string.no_text_entered))
         }
         val sharedPrefs = getSharedPreferences("MyAppPrefs", MODE_PRIVATE)
-        val defaultEndpoint = "https://api.openai.com/v1"
+        val defaultEndpoint = "https://api.openai.com/v1/"
         val endpoint = sharedPrefs.getString("endpoint", defaultEndpoint)
         val defaultKey = (if (endpoint.equals(defaultEndpoint)) BuildConfig.DEFAULT_API_KEY else null)
         val apiKey = sharedPrefs.getString("apiKey", null) ?: defaultKey
@@ -223,7 +223,7 @@ class MainActivity : AppCompatActivity() {
         """.trimIndent()
 
         val response: String = openAiService.chatCompletion(
-            model = sharedPrefs.getString("model", "gpt-4o-mini")!!,
+            model = sharedPrefs.getString("model", "gpt-5-nano")!!,
             prompt = prompt,
             forceJson = sharedPrefs.getBoolean("forceJson", true)
         )
