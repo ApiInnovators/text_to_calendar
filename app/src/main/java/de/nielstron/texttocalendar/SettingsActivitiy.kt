@@ -57,8 +57,8 @@ class SettingsActivitiy : AppCompatActivity() {
         forceJsonSwitch.isChecked = sharedPrefs.getBoolean("forceJson", true)
         autoTranslateTo.setText(sharedPrefs.getString("autoTranslateTo", userLang))
         keepLanguageFor.setText(sharedPrefs.getString("keepLanguageFor", userLangs))
-        modelEdit.setText(sharedPrefs.getString("model", "gpt-4o-mini"))
-        endpointEdit.setText(sharedPrefs.getString("endpoint", "https://api.openai.com/v1"))
+        modelEdit.setText(sharedPrefs.getString("model", "gpt-5-nano"))
+        endpointEdit.setText(sharedPrefs.getString("endpoint", "https://api.openai.com/v1/"))
         apiKeyEdit.setText(sharedPrefs.getString("apiKey", null))
     }
 
@@ -85,8 +85,8 @@ class SettingsActivitiy : AppCompatActivity() {
             putBoolean("forceJson", true)
             putString("autoTranslateTo", userLang)
             putString("keepLanguageFor", userLangs)
-            putString("endpoint", "https://api.openai.com/v1")
-            putString("model", "gpt-4o-mini")
+            putString("endpoint", "https://api.openai.com/v1/")
+            putString("model", "gpt-5-nano")
             putString("apiKey", null)
             apply()
         }

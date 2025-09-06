@@ -71,7 +71,7 @@
             android:layout_height="50dp"
             android:ems="10"
             android:inputType="text"
-            android:text="gpt-4o-mini" />
+            android:text="gpt-5-nano" />
 
         <TextView
             android:id="@+id/textView3"

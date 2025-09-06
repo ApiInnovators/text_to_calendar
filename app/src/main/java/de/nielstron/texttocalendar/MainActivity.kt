@@ -4,6 +4,7 @@ import android.content.Intent
 import android.content.res.Resources
 import android.os.Bundle
 import android.provider.CalendarContract
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Button
@@ -111,8 +112,11 @@ class MainActivity : AppCompatActivity() {
             progressBar.visibility = ProgressBar.INVISIBLE
         }
         val handler = CoroutineExceptionHandler { _, exception ->
+            Log.e("MainActivity", "Exception in event extraction: ${exception.message}", exception)
             MainScope().launch {
-                errorText.setText(getString(R.string.error_trying_to_create_event, exception.message))
+                val errorMessage = exception.message ?: "Unknown error"
+                Log.e("MainActivity", "Displaying error to user: $errorMessage")
+                errorText.setText(getString(R.string.error_trying_to_create_event, errorMessage))
                 resetButton()
             }
         }
@@ -129,6 +133,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun _extractEventAndOpenCalendar(text: String) {
+        Log.d("MainActivity", "Starting event extraction for text: ${text.take(100)}...")
         if (text.isEmpty()) {
             throw Exception(getString(R.string.no_text_entered))
         }
@@ -137,9 +142,16 @@ class MainActivity : AppCompatActivity() {
         val endpoint = sharedPrefs.getString("endpoint", defaultEndpoint)
         val defaultKey = (if (endpoint.equals(defaultEndpoint)) BuildConfig.DEFAULT_API_KEY else null)
         val apiKey = sharedPrefs.getString("apiKey", null) ?: defaultKey
+        Log.d("MainActivity", "Using endpoint: $endpoint")
+        Log.d("MainActivity", "API key available: ${!apiKey.isNullOrEmpty()}")
+        
+        if (apiKey.isNullOrEmpty()) {
+            throw Exception("No API key available. Please set up your OpenAI API key.")
+        }
+        
         val openAiService = OpenAiService(
-            baseUrl = endpoint!!,
-            apiKey = apiKey!!
+            baseUrl = endpoint ?: defaultEndpoint,
+            apiKey = apiKey
         )
 
         // Get the current date in ISO 8601 format
@@ -224,75 +236,141 @@ class MainActivity : AppCompatActivity() {
             ```
         """.trimIndent()
 
-        val response: String = openAiService.chatCompletion(
-            model = sharedPrefs.getString("model", "gpt-5-nano")!!,
-            prompt = prompt,
-            forceJson = sharedPrefs.getBoolean("forceJson", true)
-        )
+        Log.d("MainActivity", "Making API call with model: ${sharedPrefs.getString("model", "gpt-5-nano")}")
+        val response: String = try {
+            openAiService.chatCompletion(
+                model = sharedPrefs.getString("model", "gpt-5-nano")!!,
+                prompt = prompt,
+                forceJson = sharedPrefs.getBoolean("forceJson", true)
+            )
+        } catch (e: Exception) {
+            Log.e("MainActivity", "API call failed: ${e.message}", e)
+            throw Exception("OpenAI API call failed: ${e.message}")
+        }
+        
+        Log.d("MainActivity", "API response received: $response")
         if (response.trim().equals("{}")) {
+            Log.w("MainActivity", "Empty JSON response - no event found")
             throw Exception(getString(R.string.no_value_found))
         }
-        val parsedEvent = Json.decodeFromString<RawEvent>(response)
+        
+        val parsedEvent = try {
+            Json.decodeFromString<RawEvent>(response)
+        } catch (e: Exception) {
+            Log.e("MainActivity", "JSON parsing failed: ${e.message}", e)
+            Log.e("MainActivity", "Raw response was: $response")
+            throw Exception("Failed to parse API response: ${e.message}")
+        }
+        
+        Log.d("MainActivity", "Parsed event: $parsedEvent")
 
         // post-process the event
+        Log.d("MainActivity", "Processing event data...")
         val fullSummary = getString(R.string.full_description, parsedEvent.summary, text)
+        Log.d("MainActivity", "Full summary created")
+        
         var startTime: LocalDateTime;
         try {
+            Log.d("MainActivity", "Parsing start time: ${parsedEvent.startTime}")
             startTime = if (parsedEvent.startTime?.contains("+") == true || parsedEvent.startTime?.contains("Z") == true) {
                 // Parse timezone-aware format and convert to local time
+                Log.d("MainActivity", "Parsing as timezone-aware format")
                 ZonedDateTime.parse(parsedEvent.startTime).toLocalDateTime()
             } else {
                 // Parse basic ISO format
+                Log.d("MainActivity", "Parsing as basic ISO format")
                 LocalDateTime.parse(parsedEvent.startTime)
             }
+            Log.d("MainActivity", "Start time parsed successfully: $startTime")
         } catch (e: Exception) {
+            Log.w("MainActivity", "Start time parsing failed: ${e.message}, using current time")
             // If the start time is not provided or parseable, use the current time
             startTime = LocalDateTime.now();
         }
         var endTime: LocalDateTime?;
         try {
+            Log.d("MainActivity", "Parsing end time: ${parsedEvent.endTime}")
             endTime = if (!parsedEvent.endTime.isNullOrBlank()) {
                 if (parsedEvent.endTime.contains("+") || parsedEvent.endTime.contains("Z")) {
                     // Parse timezone-aware format and convert to local time
+                    Log.d("MainActivity", "Parsing end time as timezone-aware format")
                     ZonedDateTime.parse(parsedEvent.endTime).toLocalDateTime()
                 } else {
                     // Parse basic ISO format
+                    Log.d("MainActivity", "Parsing end time as basic ISO format")
                     LocalDateTime.parse(parsedEvent.endTime)
                 }
             } else {
+                Log.d("MainActivity", "No end time provided")
                 null
             }
+            Log.d("MainActivity", "End time parsed: $endTime")
         } catch (e: Exception) {
+            Log.w("MainActivity", "End time parsing failed: ${e.message}, using null")
             // If the end time is not provided or parseable, use null
             endTime = null;
         }
 
-        val properEvent = ProperEvent(
-            title = parsedEvent.title,
-            description = fullSummary,
-            location = parsedEvent.location,
-            startTime = startTime,
-            endTime = endTime,
-        )
+        val properEvent = try {
+            ProperEvent(
+                title = parsedEvent.title,
+                description = fullSummary,
+                location = parsedEvent.location,
+                startTime = startTime,
+                endTime = endTime,
+            )
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Failed to create ProperEvent: ${e.message}", e)
+            throw Exception("Failed to create event object: ${e.message}")
+        }
+        
+        Log.d("MainActivity", "ProperEvent created successfully: $properEvent")
 
         // Open the calendar app with the event details
-        openCalendarAddEvent(properEvent)
+        try {
+            Log.d("MainActivity", "Opening calendar with event...")
+            openCalendarAddEvent(properEvent)
+            Log.d("MainActivity", "Calendar opened successfully")
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Failed to open calendar: ${e.message}", e)
+            throw Exception("Failed to open calendar: ${e.message}")
+        }
     }
 
     private fun openCalendarAddEvent(parsedEvent: ProperEvent) {
+        Log.d("MainActivity", "Creating calendar intent for event: ${parsedEvent.title}")
+        
         val localTimeOffset = ZoneOffset.systemDefault().rules.getOffset(LocalDateTime.now())
+        Log.d("MainActivity", "Local time offset: $localTimeOffset")
+        
+        val startTimeEpoch = parsedEvent.startTime.toEpochSecond(localTimeOffset) * 1000
+        val endTimeEpoch = parsedEvent.endTime?.toEpochSecond(localTimeOffset)?.times(1000)
+        
+        Log.d("MainActivity", "Start time epoch: $startTimeEpoch")
+        Log.d("MainActivity", "End time epoch: $endTimeEpoch")
+        
         val intent = Intent(Intent.ACTION_INSERT).apply {
             data = CalendarContract.Events.CONTENT_URI
             putExtra(CalendarContract.Events.TITLE, parsedEvent.title)
             putExtra(CalendarContract.Events.DESCRIPTION, parsedEvent.description)
-            putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, parsedEvent.startTime.toEpochSecond(localTimeOffset) * 1000)
+            putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, startTimeEpoch)
             if (parsedEvent.endTime != null) {
-                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, parsedEvent.endTime.toEpochSecond(localTimeOffset) * 1000)
+                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, endTimeEpoch)
             }
             if (parsedEvent.location != null) {
                 putExtra(CalendarContract.Events.EVENT_LOCATION, parsedEvent.location)
             }
         }
-        startActivity(intent)
+        
+        Log.d("MainActivity", "Intent extras: ${intent.extras}")
+        Log.d("MainActivity", "Starting calendar activity...")
+        
+        try {
+            startActivity(intent)
+            Log.d("MainActivity", "Calendar activity started successfully")
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Failed to start calendar activity: ${e.message}", e)
+            throw Exception("Cannot open calendar app: ${e.message}")
+        }
     }
 }
