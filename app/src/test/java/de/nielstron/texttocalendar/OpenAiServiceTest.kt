@@ -10,11 +10,11 @@ class OpenAiServiceTest {
     fun testChatCompletionWithValidResponse() = runBlocking {
         // This test uses the actual OpenAI API with a simple prompt
         // Note: This requires a valid API key and will make a real API call
-        val apiKey = "your-test-api-key" // Replace with actual key for testing
-        val baseUrl = "https://api.openai.com/v1"
+        val apiKey = de.nielstron.texttocalendar.BuildConfig.DEFAULT_API_KEY
+        val baseUrl = "https://api.openai.com/v1/"
         
-        if (apiKey == "your-test-api-key") {
-            // Skip test if no real API key provided
+        if (apiKey.isNullOrEmpty()) {
+            // Skip test if no API key provided
             return@runBlocking
         }
         
@@ -29,7 +29,7 @@ class OpenAiServiceTest {
         
         try {
             val response = service.chatCompletion(
-                model = "gpt-3.5-turbo",
+                model = "gpt-5-nano",
                 prompt = prompt,
                 forceJson = true
             )
@@ -56,7 +56,7 @@ class OpenAiServiceTest {
         var actualMessage = ""
         
         try {
-            service.chatCompletion("gpt-3.5-turbo", "test prompt", true)
+            service.chatCompletion("gpt-5-nano", "test prompt", true)
             fail("Should have thrown an exception with invalid API key")
         } catch (e: Exception) {
             exceptionThrown = true

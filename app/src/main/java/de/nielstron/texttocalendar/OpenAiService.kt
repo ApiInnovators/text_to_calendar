@@ -47,10 +47,21 @@ class OpenAiService(private val baseUrl: String, private val apiKey: String) {
         )
         
         if (response.isSuccessful) {
-            return response.body()?.choices?.firstOrNull()?.message?.content 
-                ?: throw Exception("Empty response from OpenAI API")
+            val responseBody = response.body()
+            if (responseBody == null) {
+                throw Exception("Null response body from OpenAI API")
+            }
+            if (responseBody.choices.isEmpty()) {
+                throw Exception("No choices in OpenAI API response")
+            }
+            val content = responseBody.choices.firstOrNull()?.message?.content
+            if (content.isNullOrBlank()) {
+                throw Exception("Empty content in OpenAI API response. Response body: $responseBody")
+            }
+            return content
         } else {
-            throw Exception("OpenAI API error: ${response.code()} ${response.message()}")
+            val errorBody = response.errorBody()?.string() ?: "Unknown error"
+            throw Exception("OpenAI API error: ${response.code()} ${response.message()}. Error body: $errorBody")
         }
     }
 }

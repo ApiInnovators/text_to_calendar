@@ -25,6 +25,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import java.time.ZonedDateTime
+import java.time.format.DateTimeParseException
 
 @Serializable
 data class RawEvent(
@@ -236,16 +238,32 @@ class MainActivity : AppCompatActivity() {
         val fullSummary = getString(R.string.full_description, parsedEvent.summary, text)
         var startTime: LocalDateTime;
         try {
-            startTime = LocalDateTime.parse(parsedEvent.startTime);
+            startTime = if (parsedEvent.startTime?.contains("+") == true || parsedEvent.startTime?.contains("Z") == true) {
+                // Parse timezone-aware format and convert to local time
+                ZonedDateTime.parse(parsedEvent.startTime).toLocalDateTime()
+            } else {
+                // Parse basic ISO format
+                LocalDateTime.parse(parsedEvent.startTime)
+            }
         } catch (e: Exception) {
             // If the start time is not provided or parseable, use the current time
             startTime = LocalDateTime.now();
         }
         var endTime: LocalDateTime?;
         try {
-            endTime = LocalDateTime.parse(parsedEvent.endTime);
+            endTime = if (!parsedEvent.endTime.isNullOrBlank()) {
+                if (parsedEvent.endTime.contains("+") || parsedEvent.endTime.contains("Z")) {
+                    // Parse timezone-aware format and convert to local time
+                    ZonedDateTime.parse(parsedEvent.endTime).toLocalDateTime()
+                } else {
+                    // Parse basic ISO format
+                    LocalDateTime.parse(parsedEvent.endTime)
+                }
+            } else {
+                null
+            }
         } catch (e: Exception) {
-            // If the end time is not provided or parseable, use the start time
+            // If the end time is not provided or parseable, use null
             endTime = null;
         }
 
