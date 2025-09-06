@@ -5,5 +5,5 @@
     <string name="full_description">%1$s\n\nOriginal Text: \n %2$s</string>
     <string name="no_text_entered">No text was entered</string>
     <string name="error_no_shared_text">No text was shared</string>
-    <string name="share_name">Add to Calendar</string>
+    <string name="share_name">Text to Calendar</string>
 </resources>
