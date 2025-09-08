@@ -229,6 +229,28 @@ class MainActivity : AppCompatActivity() {
             ```
             Extracted JSON:
             {}
+            
+            Text:
+            ```
+            ♥️🔥❤️‍🔥We are international friends❤️‍🔥🔥♥️
+            Photo of ♥️🔥❤️‍🔥We are international friends❤️‍🔥🔥♥️ group
+            4.7
+            32 ratings
+            Friday, September 12, 2025
+            7:30 PM to 11:30 PM KST
+
+            Every week on Friday until September 18, 2025
+            Mike's cabin
+            mapo sogyo-dong, 358-110 · seoul
+            ```
+            Extracted JSON:
+            {
+              "title": "We are international friends",
+              "summary": "Friday meetup with international friends",
+              "location": "Mike's cabin, mapo sogyo-dong, 358-110, seoul",
+              "startTime": "2025-09-12T19:30:00+09:00",
+              "endTime": "2025-09-12T23:30:00+09:00"
+            }
 
             Text:
             ```
@@ -241,6 +263,7 @@ class MainActivity : AppCompatActivity() {
             openAiService.chatCompletion(
                 model = sharedPrefs.getString("model", "gpt-5-nano")!!,
                 prompt = prompt,
+                reasoning_effort = "low",
                 forceJson = sharedPrefs.getBoolean("forceJson", true)
             )
         } catch (e: Exception) {

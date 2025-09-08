@@ -11,6 +11,7 @@ import kotlinx.serialization.Serializable
 data class OpenAiRequest(
     val model: String,
     val messages: List<Message>,
+    val reasoning_effort: String,
     val response_format: ResponseFormat? = null
 )
 

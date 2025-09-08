@@ -16,6 +16,7 @@ class OpenAiService(private val baseUrl: String, private val apiKey: String) {
     suspend fun chatCompletion(
         model: String,
         prompt: String,
+        reasoning_effort: String,
         forceJson: Boolean = true
     ): String {
         val messages = listOf(
@@ -31,6 +32,7 @@ class OpenAiService(private val baseUrl: String, private val apiKey: String) {
         val request = OpenAiRequest(
             model = model,
             messages = messages,
+            reasoning_effort,
             response_format = responseFormat
         )
         
@@ -43,7 +45,7 @@ class OpenAiService(private val baseUrl: String, private val apiKey: String) {
         val response = api.chatCompletion(
             url = chatUrl,
             authorization = "Bearer $apiKey",
-            request = request
+            request = request,
         )
         
         if (response.isSuccessful) {
