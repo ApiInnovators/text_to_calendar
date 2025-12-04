@@ -4,13 +4,13 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.Assert.assertEquals
-import java.time.LocalDateTime
+import java.time.ZonedDateTime
 
 class LiveOpenAiEndToEndFormattingTest {
 
     private fun ensureApiKey(): String {
         val apiKey = BuildConfig.DEFAULT_API_KEY
-        assumeTrue("No OpenAI API key configured; skipping live test", !apiKey.isNullOrBlank())
+        // assumeTrue("No OpenAI API key configured; skipping live test", !apiKey.isNullOrBlank())
         return apiKey!!
     }
 
@@ -40,8 +40,8 @@ class LiveOpenAiEndToEndFormattingTest {
 
         val parsedEvent = parseEventResponse(response, text, descriptionFormatter)
         assertEquals("Berlin Product Meetup", parsedEvent.title)
-        assertEquals(LocalDateTime.of(2025, 6, 10, 9, 0), parsedEvent.startTime)
-        assertEquals(LocalDateTime.of(2025, 6, 10, 11, 0), parsedEvent.endTime)
+        assertEquals(ZonedDateTime.parse("2025-06-10T09:00:00+02:00"), parsedEvent.startTime)
+        assertEquals(ZonedDateTime.parse("2025-06-10T11:00:00+02:00"), parsedEvent.endTime)
     }
 
     @Test
@@ -56,8 +56,8 @@ class LiveOpenAiEndToEndFormattingTest {
 
         val parsedEvent = parseEventResponse(response, text, descriptionFormatter)
         assertEquals("Singapore Night Ride", parsedEvent.title)
-        assertEquals(LocalDateTime.of(2025, 8, 1, 20, 0), parsedEvent.startTime)
-        assertEquals(LocalDateTime.of(2025, 8, 1, 23, 0), parsedEvent.endTime)
+        assertEquals(ZonedDateTime.parse("2025-08-01T20:00:00+08:00"), parsedEvent.startTime)
+        assertEquals(ZonedDateTime.parse("2025-08-01T23:00:00+08:00"), parsedEvent.endTime)
     }
 
     @Test
@@ -70,7 +70,7 @@ class LiveOpenAiEndToEndFormattingTest {
         val response = sendPromptToModel(text, promptSettings(apiKey))
         val parsedEvent = parseEventResponse(response, text, descriptionFormatter)
         assertEquals("NYC Investor Dinner", parsedEvent.title)
-        assertEquals(LocalDateTime.of(2025, 3, 1, 18, 0), parsedEvent.startTime)
-        assertEquals(LocalDateTime.of(2025, 3, 1, 21, 0), parsedEvent.endTime)
+        assertEquals(ZonedDateTime.parse("2025-03-01T18:00:00-05:00"), parsedEvent.startTime)
+        assertEquals(ZonedDateTime.parse("2025-03-01T21:00:00-05:00"), parsedEvent.endTime)
     }
 }

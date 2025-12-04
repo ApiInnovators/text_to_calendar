@@ -4,6 +4,8 @@ import kotlinx.serialization.json.Json
 import org.junit.Test
 import org.junit.Assert.*
 import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 
 class TextExtractionTest {
 
@@ -54,12 +56,12 @@ class TextExtractionTest {
             title = "Test Meeting",
             summary = "Test description",
             location = "Office",
-            startTime = "2024-01-15T10:00:00",
-            endTime = "2024-01-15T11:00:00"
+            startTime = "2024-01-15T10:00:00Z",
+            endTime = "2024-01-15T11:00:00Z"
         )
 
-        val startTime = LocalDateTime.parse(rawEvent.startTime!!)
-        val endTime = LocalDateTime.parse(rawEvent.endTime!!)
+        val startTime = ZonedDateTime.parse(rawEvent.startTime!!)
+        val endTime = ZonedDateTime.parse(rawEvent.endTime!!)
         
         val properEvent = ProperEvent(
             title = rawEvent.title,
@@ -72,39 +74,30 @@ class TextExtractionTest {
         assertEquals("Test Meeting", properEvent.title)
         assertTrue(properEvent.description.contains("Test description"))
         assertEquals("Office", properEvent.location)
-        assertEquals(LocalDateTime.of(2024, 1, 15, 10, 0), properEvent.startTime)
-        assertEquals(LocalDateTime.of(2024, 1, 15, 11, 0), properEvent.endTime)
+        assertEquals(ZonedDateTime.parse("2024-01-15T10:00:00Z"), properEvent.startTime)
+        assertEquals(ZonedDateTime.parse("2024-01-15T11:00:00Z"), properEvent.endTime)
     }
 
     @Test
     fun testEventConversionWithInvalidDateTime() {
-        // Test handling of invalid date/time strings
-        val rawEvent = RawEvent(
-            title = "Test Event",
-            summary = "Test",
-            startTime = "invalid-date",
-            endTime = null
+        val response = """
+            {
+                "title": "Test Event",
+                "summary": "Test summary",
+                "startTime": "invalid-date"
+            }
+        """.trimIndent()
+
+        val fallbackNow = ZonedDateTime.of(2024, 5, 10, 12, 0, 0, 0, ZoneOffset.UTC)
+        val event = parseEventResponse(
+            response = response,
+            originalText = "Original text",
+            descriptionFormatter = { summary, original -> "$summary\n$original" },
+            nowProvider = { fallbackNow }
         )
 
-        // Simulate the error handling logic from MainActivity
-        var startTime: LocalDateTime
-        try {
-            startTime = LocalDateTime.parse(rawEvent.startTime)
-        } catch (e: Exception) {
-            // If the start time is not provided or parseable, use the current time
-            startTime = LocalDateTime.now()
-        }
-        
-        var endTime: LocalDateTime?
-        try {
-            endTime = if (rawEvent.endTime != null) LocalDateTime.parse(rawEvent.endTime) else null
-        } catch (e: Exception) {
-            endTime = null
-        }
-
-        // Should not throw exception and should have reasonable defaults
-        assertNotNull(startTime)
-        assertNull(endTime)
+        assertEquals(fallbackNow, event.startTime)
+        assertNull(event.endTime)
     }
 
     @Test

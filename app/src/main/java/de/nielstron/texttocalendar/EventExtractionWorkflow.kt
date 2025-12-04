@@ -2,7 +2,7 @@ package de.nielstron.texttocalendar
 
 import kotlinx.serialization.json.Json
 import java.time.LocalDateTime
-import java.time.ZoneOffset
+import java.time.ZonedDateTime
 
 data class PromptSettings(
     val endpoint: String,
@@ -137,7 +137,7 @@ fun parseEventResponse(
     response: String,
     originalText: String,
     descriptionFormatter: (String, String) -> String,
-    nowProvider: () -> LocalDateTime = { LocalDateTime.now() },
+    nowProvider: () -> ZonedDateTime = { ZonedDateTime.now() },
 ): ProperEvent {
     val trimmed = response.trim()
     if (trimmed.isEmpty()) {
@@ -157,13 +157,13 @@ fun parseEventResponse(
     val now = nowProvider()
 
     val startTime = try {
-        rawEvent.startTime?.let { DateTimeParser.toLocalDateTime(it) } ?: now
+        rawEvent.startTime?.let { DateTimeParser.toZonedDateTime(it) } ?: now
     } catch (e: Exception) {
         now
     }
 
     val endTime = try {
-        rawEvent.endTime?.let { DateTimeParser.toLocalDateTime(it) }
+        rawEvent.endTime?.let { DateTimeParser.toZonedDateTime(it) }
     } catch (e: Exception) {
         null
     }
@@ -177,15 +177,9 @@ fun parseEventResponse(
     )
 }
 
-fun buildCalendarLaunchData(
-    event: ProperEvent,
-    zoneOffsetProvider: () -> ZoneOffset = {
-        ZoneOffset.systemDefault().rules.getOffset(LocalDateTime.now())
-    },
-): CalendarLaunchData {
-    val offset = zoneOffsetProvider()
-    val startMillis = event.startTime.toEpochSecond(offset) * 1000
-    val endMillis = event.endTime?.toEpochSecond(offset)?.times(1000)
+fun buildCalendarLaunchData(event: ProperEvent): CalendarLaunchData {
+    val startMillis = event.startTime.toInstant().toEpochMilli()
+    val endMillis = event.endTime?.toInstant()?.toEpochMilli()
 
     return CalendarLaunchData(
         title = event.title,

@@ -1,6 +1,7 @@
 package de.nielstron.texttocalendar
 
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeParseException
 
@@ -9,10 +10,17 @@ import java.time.format.DateTimeParseException
  */
 object DateTimeParser {
     fun toLocalDateTime(timestamp: String): LocalDateTime {
+        return toZonedDateTime(timestamp).toLocalDateTime()
+    }
+
+    fun toZonedDateTime(
+        timestamp: String,
+        defaultZoneProvider: () -> ZoneId = { ZoneId.systemDefault() },
+    ): ZonedDateTime {
         return try {
-            ZonedDateTime.parse(timestamp).toLocalDateTime()
+            ZonedDateTime.parse(timestamp)
         } catch (e: DateTimeParseException) {
-            LocalDateTime.parse(timestamp)
+            LocalDateTime.parse(timestamp).atZone(defaultZoneProvider())
         }
     }
 }

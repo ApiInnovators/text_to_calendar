@@ -3,7 +3,8 @@ package de.nielstron.texttocalendar
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 
 class EventResponseParserTest {
 
@@ -17,7 +18,7 @@ class EventResponseParserTest {
             }
         """.trimIndent()
 
-        val now = LocalDateTime.of(2024, 11, 12, 9, 30)
+        val now = ZonedDateTime.of(2024, 11, 12, 9, 30, 0, 0, ZoneOffset.UTC)
         val event = parseEventResponse(
             response = response,
             originalText = "Lunch at 9:30 on Nov 12",
@@ -37,7 +38,7 @@ class EventResponseParserTest {
             {
                 "title": "Planning Session",
                 "summary": "Discuss roadmap",
-                "startTime": "2025-01-05T10:00:00",
+                "startTime": "2025-01-05T10:00:00Z",
                 "endTime": "not-a-date"
             }
         """.trimIndent()
@@ -46,10 +47,10 @@ class EventResponseParserTest {
             response = response,
             originalText = "Planning Session at 10",
             descriptionFormatter = { summary, original -> "$summary -> $original" },
-            nowProvider = { LocalDateTime.of(2025, 1, 1, 0, 0) }
+            nowProvider = { ZonedDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC) }
         )
 
-        assertEquals(LocalDateTime.of(2025, 1, 5, 10, 0), event.startTime)
+        assertEquals(ZonedDateTime.parse("2025-01-05T10:00:00Z"), event.startTime)
         assertNull(event.endTime)
     }
 }

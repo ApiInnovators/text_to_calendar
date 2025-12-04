@@ -22,7 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import java.time.LocalDateTime
+import java.time.ZonedDateTime
 
 @Serializable
 data class RawEvent(
@@ -36,9 +36,9 @@ data class RawEvent(
 data class ProperEvent(
     val title: String,
     val description: String,
-    val startTime: LocalDateTime,
+    val startTime: ZonedDateTime,
     val location: String? = null,
-    val endTime: LocalDateTime? = null,
+    val endTime: ZonedDateTime? = null,
 )
 
 
