@@ -22,9 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import java.time.LocalDateTime
-import java.time.ZoneOffset
 
 @Serializable
 data class RawEvent(
@@ -140,201 +138,59 @@ class MainActivity : AppCompatActivity() {
         val apiKey = sharedPrefs.getString(AppPreferencesConfig.KEY_API_KEY, null) ?: defaultKey
         Log.d("MainActivity", "Using endpoint: $endpoint")
         Log.d("MainActivity", "API key available: ${!apiKey.isNullOrEmpty()}")
-        
+
         if (apiKey.isNullOrEmpty()) {
             throw Exception("No API key available. Please set up your OpenAI API key.")
         }
-        
-        val openAiService = OpenAiService(
-            baseUrl = endpoint ?: AppPreferencesConfig.DEFAULT_ENDPOINT,
-            apiKey = apiKey
-        )
 
-        // Get the current date in ISO 8601 format
-        val date = LocalDateTime.now()
-        val today = date.toString()
-        val tomorrow = date.plusDays(1).toString()
-
-        // get langs settings
         val keepLangsDefault = AppPreferencesConfig.defaultKeepLanguageFor(resources)
         val autoTranslateToDefault = AppPreferencesConfig.defaultAutoTranslateTo(resources)
-        val keepLangs = sharedPrefs.getString(AppPreferencesConfig.KEY_KEEP_LANGUAGE_FOR, keepLangsDefault)
-        val autoTranslateTo = sharedPrefs.getString(AppPreferencesConfig.KEY_AUTO_TRANSLATE_TO, autoTranslateToDefault)
-
-        val prompt = """
-            You are an expert at extracting calendar event details from a text.
-            Provide the result in JSON format with fields: title, summary, location, startTime, endTime (both in ISO 8601 format).
-            If a field is not present, omit it from the response. Do not include fields that can not be derived from the text.
-            Keep the summary very short and concise, the full original text will also be provided.
-            The following languages can be kept for the description: ${keepLangs}.
-            Otherwise translate to ${autoTranslateTo}.
-            If there is no event in the text, return an empty JSON object.
-            Today is $today
-            Here are some examples:
-
-            Text:
-            ```
-            Kosten
-
-            Nettomiete:
-            CHF 2’369.– 
-            Nebenkosten:
-            CHF 160.– 
-            Miete:
-            CHF 2’529.– 
-
-            Beschreibung:
-
-            An bester Lage im Kreis 3 - Wunderschöne 3.5-Zimmer-Wohnung bietet Wohnkomfort und Eigentumswohnungsstandard in einem:
-            Weitere 2.5 - Zimmer-Wohnungen ab 42 m2 im gleichen Haus, Miete ab: 1'890.00 pro Monat
-            Wo? - Idastrasse 23, 8003 Zürich
-            Ab Wann? - 01.10.2024
-            Interessiert an einer Besichtigung?
-            Besichtigung: Donnerstag, 15.08.2024 um 16:00 Uhr
-            Merkmale:
-            Top Lage, nahe pulsierendem Idaplatz
-            Beschtigung: Donnerstag, 15.08.2024 um 16:00 Uhr. Wir bitten Sie um eine Voranmeldung per Mail an: malag.ag@bluewin.ch.
-            Haustiere wie Hund und Katze sind leider nicht erlaubt.
-            Für eine sichere Bewerbung, bitten wir Sie um Auszug aus dem Betreibungsregister nicht älter als 3 Monate.
-            ```
-            Extracted JSON:
-            {
-            "title": "Besichtigung Idastrasse",
-            "summary": "3.5 Wohnung in Kreis 3. Miete: CHF 2529.",
-            "startTime": "2024-08-15T16:00:10",
-            "location": "Idastrasse 23, 8003 Zürich"
-            }
-
-            Text:
-            ```
-            Hey everyone, I would like to invite you for a chill BBQ tomorrow, around 7 at my place? Until 10?
-            Best Max
-            ```
-            Extracted JSON:
-            {
-            "title": "BBQ with Max",
-            "location": "Max place",
-            "startTime": "${tomorrow}T19:00:00"
-            "endTime": "${tomorrow}T22:00:00"
-            }
-            
-            Text:
-            ```
-            Hey dawg whats up
-            ```
-            Extracted JSON:
-            {}
-            
-            Text:
-            ```
-            ♥️🔥❤️‍🔥We are international friends❤️‍🔥🔥♥️
-            Photo of ♥️🔥❤️‍🔥We are international friends❤️‍🔥🔥♥️ group
-            4.7
-            32 ratings
-            Friday, September 12, 2025
-            7:30 PM to 11:30 PM KST
-
-            Every week on Friday until September 18, 2025
-            Mike's cabin
-            mapo sogyo-dong, 358-110 · seoul
-            ```
-            Extracted JSON:
-            {
-              "title": "We are international friends",
-              "summary": "Friday meetup with international friends",
-              "location": "Mike's cabin, mapo sogyo-dong, 358-110, seoul",
-              "startTime": "2025-09-12T19:30:00+09:00",
-              "endTime": "2025-09-12T23:30:00+09:00"
-            }
-
-            Text:
-            ```
-            $text
-            ```
-        """.trimIndent()
-
+        val keepLangs = sharedPrefs.getString(AppPreferencesConfig.KEY_KEEP_LANGUAGE_FOR, keepLangsDefault) ?: keepLangsDefault
+        val autoTranslateTo = sharedPrefs.getString(AppPreferencesConfig.KEY_AUTO_TRANSLATE_TO, autoTranslateToDefault) ?: autoTranslateToDefault
         val model = sharedPrefs.getString(AppPreferencesConfig.KEY_MODEL, AppPreferencesConfig.DEFAULT_MODEL)!!
         val reasoningEffort = sharedPrefs.getString(AppPreferencesConfig.KEY_REASONING_EFFORT, AppPreferencesConfig.DEFAULT_REASONING_EFFORT)
             ?: AppPreferencesConfig.DEFAULT_REASONING_EFFORT
-        Log.d("MainActivity", "Making API call with model: $model and reasoning effort: $reasoningEffort")
-        val response: String = try {
-            openAiService.chatCompletion(
-                model = model,
-                prompt = prompt,
-                reasoning_effort = reasoningEffort,
-                forceJson = sharedPrefs.getBoolean(AppPreferencesConfig.KEY_FORCE_JSON, AppPreferencesConfig.DEFAULT_FORCE_JSON)
-            )
+        val forceJson = sharedPrefs.getBoolean(AppPreferencesConfig.KEY_FORCE_JSON, AppPreferencesConfig.DEFAULT_FORCE_JSON)
+
+        val promptSettings = PromptSettings(
+            endpoint = endpoint ?: AppPreferencesConfig.DEFAULT_ENDPOINT,
+            apiKey = apiKey,
+            model = model,
+            reasoningEffort = reasoningEffort,
+            forceJson = forceJson,
+            keepLanguageFor = keepLangs,
+            autoTranslateTo = autoTranslateTo,
+        )
+
+        val response = try {
+            Log.d("MainActivity", "Making API call with model: $model and reasoning effort: $reasoningEffort")
+            sendPromptToModel(text, promptSettings)
         } catch (e: Exception) {
             Log.e("MainActivity", "API call failed: ${e.message}", e)
             throw Exception("OpenAI API call failed: ${e.message}")
         }
-        
-        Log.d("MainActivity", "API response received: $response")
-        if (response.trim().equals("{}")) {
-            Log.w("MainActivity", "Empty JSON response - no event found")
-            throw Exception(getString(R.string.no_value_found))
-        }
-        
-        val parsedEvent = try {
-            Json.decodeFromString<RawEvent>(response)
-        } catch (e: Exception) {
-            Log.e("MainActivity", "JSON parsing failed: ${e.message}", e)
-            Log.e("MainActivity", "Raw response was: $response")
-            throw Exception("Failed to parse API response: ${e.message}")
-        }
-        
-        Log.d("MainActivity", "Parsed event: $parsedEvent")
-
-        // post-process the event
-        Log.d("MainActivity", "Processing event data...")
-        val fullSummary = getString(R.string.full_description, parsedEvent.summary, text)
-        Log.d("MainActivity", "Full summary created")
-        
-        var startTime: LocalDateTime;
-        try {
-            Log.d("MainActivity", "Parsing start time: ${parsedEvent.startTime}")
-            startTime = DateTimeParser.toLocalDateTime(parsedEvent.startTime!!)
-            Log.d("MainActivity", "Start time parsed successfully: $startTime")
-        } catch (e: Exception) {
-            Log.w("MainActivity", "Start time parsing failed: ${e.message}, using current time")
-            // If the start time is not provided or parseable, use the current time
-            startTime = LocalDateTime.now();
-        }
-        var endTime: LocalDateTime?;
-        try {
-            Log.d("MainActivity", "Parsing end time: ${parsedEvent.endTime}")
-            endTime = if (!parsedEvent.endTime.isNullOrBlank()) {
-                DateTimeParser.toLocalDateTime(parsedEvent.endTime)
-            } else {
-                Log.d("MainActivity", "No end time provided")
-                null
-            }
-            Log.d("MainActivity", "End time parsed: $endTime")
-        } catch (e: Exception) {
-            Log.w("MainActivity", "End time parsing failed: ${e.message}, using null")
-            // If the end time is not provided or parseable, use null
-            endTime = null;
-        }
 
         val properEvent = try {
-            ProperEvent(
-                title = parsedEvent.title,
-                description = fullSummary,
-                location = parsedEvent.location,
-                startTime = startTime,
-                endTime = endTime,
+            Log.d("MainActivity", "Parsing API response")
+            parseEventResponse(
+                response = response,
+                originalText = text,
+                descriptionFormatter = { summary, original ->
+                    getString(R.string.full_description, summary, original)
+                }
             )
         } catch (e: Exception) {
-            Log.e("MainActivity", "Failed to create ProperEvent: ${e.message}", e)
-            throw Exception("Failed to create event object: ${e.message}")
+            Log.e("MainActivity", "Failed to parse API response: ${e.message}", e)
+            Log.e("MainActivity", "Raw response was: $response")
+            throw e
         }
-        
         Log.d("MainActivity", "ProperEvent created successfully: $properEvent")
 
-        // Open the calendar app with the event details
+        val launchData = buildCalendarLaunchData(properEvent)
+
         try {
             Log.d("MainActivity", "Opening calendar with event...")
-            openCalendarAddEvent(properEvent)
+            openCalendarAddEvent(launchData)
             Log.d("MainActivity", "Calendar opened successfully")
         } catch (e: Exception) {
             Log.e("MainActivity", "Failed to open calendar: ${e.message}", e)
@@ -342,28 +198,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun openCalendarAddEvent(parsedEvent: ProperEvent) {
-        Log.d("MainActivity", "Creating calendar intent for event: ${parsedEvent.title}")
-        
-        val localTimeOffset = ZoneOffset.systemDefault().rules.getOffset(LocalDateTime.now())
-        Log.d("MainActivity", "Local time offset: $localTimeOffset")
-        
-        val startTimeEpoch = parsedEvent.startTime.toEpochSecond(localTimeOffset) * 1000
-        val endTimeEpoch = parsedEvent.endTime?.toEpochSecond(localTimeOffset)?.times(1000)
-        
-        Log.d("MainActivity", "Start time epoch: $startTimeEpoch")
-        Log.d("MainActivity", "End time epoch: $endTimeEpoch")
-        
+    private fun openCalendarAddEvent(launchData: CalendarLaunchData) {
+        Log.d("MainActivity", "Creating calendar intent for event: ${launchData.title}")
+
         val intent = Intent(Intent.ACTION_INSERT).apply {
             data = CalendarContract.Events.CONTENT_URI
-            putExtra(CalendarContract.Events.TITLE, parsedEvent.title)
-            putExtra(CalendarContract.Events.DESCRIPTION, parsedEvent.description)
-            putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, startTimeEpoch)
-            if (parsedEvent.endTime != null) {
-                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, endTimeEpoch)
+            putExtra(CalendarContract.Events.TITLE, launchData.title)
+            putExtra(CalendarContract.Events.DESCRIPTION, launchData.description)
+            putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, launchData.startTimeEpochMillis)
+            if (launchData.endTimeEpochMillis != null) {
+                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, launchData.endTimeEpochMillis)
             }
-            if (parsedEvent.location != null) {
-                putExtra(CalendarContract.Events.EVENT_LOCATION, parsedEvent.location)
+            if (launchData.location != null) {
+                putExtra(CalendarContract.Events.EVENT_LOCATION, launchData.location)
             }
         }
         
