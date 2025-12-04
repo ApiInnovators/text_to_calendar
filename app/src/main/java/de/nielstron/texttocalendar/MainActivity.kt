@@ -1,7 +1,6 @@
 package de.nielstron.texttocalendar
 
 import android.content.Intent
-import android.content.res.Resources
 import android.os.Bundle
 import android.provider.CalendarContract
 import android.util.Log
@@ -137,11 +136,10 @@ class MainActivity : AppCompatActivity() {
         if (text.isEmpty()) {
             throw Exception(getString(R.string.no_text_entered))
         }
-        val sharedPrefs = getSharedPreferences("MyAppPrefs", MODE_PRIVATE)
-        val defaultEndpoint = "https://api.openai.com/v1/"
-        val endpoint = sharedPrefs.getString("endpoint", defaultEndpoint)
-        val defaultKey = (if (endpoint.equals(defaultEndpoint)) BuildConfig.DEFAULT_API_KEY else null)
-        val apiKey = sharedPrefs.getString("apiKey", null) ?: defaultKey
+        val sharedPrefs = AppPreferencesConfig.getSharedPreferences(this)
+        val endpoint = sharedPrefs.getString(AppPreferencesConfig.KEY_ENDPOINT, AppPreferencesConfig.DEFAULT_ENDPOINT)
+        val defaultKey = if (endpoint == AppPreferencesConfig.DEFAULT_ENDPOINT) BuildConfig.DEFAULT_API_KEY else null
+        val apiKey = sharedPrefs.getString(AppPreferencesConfig.KEY_API_KEY, null) ?: defaultKey
         Log.d("MainActivity", "Using endpoint: $endpoint")
         Log.d("MainActivity", "API key available: ${!apiKey.isNullOrEmpty()}")
         
@@ -150,7 +148,7 @@ class MainActivity : AppCompatActivity() {
         }
         
         val openAiService = OpenAiService(
-            baseUrl = endpoint ?: defaultEndpoint,
+            baseUrl = endpoint ?: AppPreferencesConfig.DEFAULT_ENDPOINT,
             apiKey = apiKey
         )
 
@@ -160,11 +158,10 @@ class MainActivity : AppCompatActivity() {
         val tomorrow = date.plusDays(1).toString()
 
         // get langs settings
-        val userConfig = Resources.getSystem().configuration
-        val userLangs = userConfig.locales.toLanguageTags()
-        val userLang = userConfig.locales[0].displayLanguage
-        val keepLangs = sharedPrefs.getString("keepLanguageFor", userLangs)
-        val autoTranslateTo = sharedPrefs.getString("autoTranslateTo", userLang)
+        val keepLangsDefault = AppPreferencesConfig.defaultKeepLanguageFor(resources)
+        val autoTranslateToDefault = AppPreferencesConfig.defaultAutoTranslateTo(resources)
+        val keepLangs = sharedPrefs.getString(AppPreferencesConfig.KEY_KEEP_LANGUAGE_FOR, keepLangsDefault)
+        val autoTranslateTo = sharedPrefs.getString(AppPreferencesConfig.KEY_AUTO_TRANSLATE_TO, autoTranslateToDefault)
 
         val prompt = """
             You are an expert at extracting calendar event details from a text.
@@ -258,13 +255,16 @@ class MainActivity : AppCompatActivity() {
             ```
         """.trimIndent()
 
-        Log.d("MainActivity", "Making API call with model: ${sharedPrefs.getString("model", "gpt-5-nano")}")
+        val model = sharedPrefs.getString(AppPreferencesConfig.KEY_MODEL, AppPreferencesConfig.DEFAULT_MODEL)!!
+        val reasoningEffort = sharedPrefs.getString(AppPreferencesConfig.KEY_REASONING_EFFORT, AppPreferencesConfig.DEFAULT_REASONING_EFFORT)
+            ?: AppPreferencesConfig.DEFAULT_REASONING_EFFORT
+        Log.d("MainActivity", "Making API call with model: $model and reasoning effort: $reasoningEffort")
         val response: String = try {
             openAiService.chatCompletion(
-                model = sharedPrefs.getString("model", "gpt-5-nano")!!,
+                model = model,
                 prompt = prompt,
-                reasoning_effort = "low",
-                forceJson = sharedPrefs.getBoolean("forceJson", true)
+                reasoning_effort = reasoningEffort,
+                forceJson = sharedPrefs.getBoolean(AppPreferencesConfig.KEY_FORCE_JSON, AppPreferencesConfig.DEFAULT_FORCE_JSON)
             )
         } catch (e: Exception) {
             Log.e("MainActivity", "API call failed: ${e.message}", e)

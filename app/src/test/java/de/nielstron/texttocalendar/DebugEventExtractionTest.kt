@@ -50,11 +50,12 @@ We are language exchange meetup and pub crawl for foreigners and Korean who want
         """.trimIndent()
 
         try {
-            println("Making API call with model: gpt-4o-mini")
+            println("Making API call with model: ${AppPreferencesConfig.DEFAULT_MODEL}")
             val response = service.chatCompletion(
-                model = "gpt-4o-mini", // Use a valid model
+                model = AppPreferencesConfig.DEFAULT_MODEL, // Use the shared default model
                 prompt = prompt,
-                forceJson = true
+                reasoning_effort = AppPreferencesConfig.DEFAULT_REASONING_EFFORT,
+                forceJson = AppPreferencesConfig.DEFAULT_FORCE_JSON
             )
             
             println("API Response: $response")

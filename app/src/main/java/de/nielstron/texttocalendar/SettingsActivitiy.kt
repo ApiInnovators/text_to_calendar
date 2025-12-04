@@ -1,6 +1,5 @@
 package de.nielstron.texttocalendar
 
-import android.content.res.Resources
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
@@ -50,44 +49,42 @@ class SettingsActivitiy : AppCompatActivity() {
     }
 
     private fun loadSettings() {
-        val userConfig = Resources.getSystem().configuration
-        val userLangs = userConfig.locales.toLanguageTags()
-        val userLang = userConfig.locales[0].displayLanguage
-        val sharedPrefs = getSharedPreferences("MyAppPrefs", MODE_PRIVATE)
-        forceJsonSwitch.isChecked = sharedPrefs.getBoolean("forceJson", true)
-        autoTranslateTo.setText(sharedPrefs.getString("autoTranslateTo", userLang))
-        keepLanguageFor.setText(sharedPrefs.getString("keepLanguageFor", userLangs))
-        modelEdit.setText(sharedPrefs.getString("model", "gpt-5-nano"))
-        endpointEdit.setText(sharedPrefs.getString("endpoint", "https://api.openai.com/v1/"))
-        apiKeyEdit.setText(sharedPrefs.getString("apiKey", null))
+        val sharedPrefs = AppPreferencesConfig.getSharedPreferences(this)
+        val defaultAutoTranslate = AppPreferencesConfig.defaultAutoTranslateTo(resources)
+        val defaultKeepLanguageFor = AppPreferencesConfig.defaultKeepLanguageFor(resources)
+        forceJsonSwitch.isChecked = sharedPrefs.getBoolean(AppPreferencesConfig.KEY_FORCE_JSON, AppPreferencesConfig.DEFAULT_FORCE_JSON)
+        autoTranslateTo.setText(sharedPrefs.getString(AppPreferencesConfig.KEY_AUTO_TRANSLATE_TO, defaultAutoTranslate))
+        keepLanguageFor.setText(sharedPrefs.getString(AppPreferencesConfig.KEY_KEEP_LANGUAGE_FOR, defaultKeepLanguageFor))
+        modelEdit.setText(sharedPrefs.getString(AppPreferencesConfig.KEY_MODEL, AppPreferencesConfig.DEFAULT_MODEL))
+        endpointEdit.setText(sharedPrefs.getString(AppPreferencesConfig.KEY_ENDPOINT, AppPreferencesConfig.DEFAULT_ENDPOINT))
+        apiKeyEdit.setText(sharedPrefs.getString(AppPreferencesConfig.KEY_API_KEY, null))
     }
 
     private fun saveSettings() {
-        val sharedPrefs = getSharedPreferences("MyAppPrefs", MODE_PRIVATE)
+        val sharedPrefs = AppPreferencesConfig.getSharedPreferences(this)
         val apiKeyContent = apiKeyEdit.text.toString()
         with(sharedPrefs.edit()) {
-            putBoolean("forceJson", forceJsonSwitch.isChecked)
-            putString("autoTranslateTo", autoTranslateTo.text.toString())
-            putString("keepLanguageFor", keepLanguageFor.text.toString())
-            putString("model", modelEdit.text.toString())
-            putString("endpoint", endpointEdit.text.toString())
-            putString("apiKey", if (apiKeyContent.equals("null") || apiKeyContent.equals("")) null else apiKeyContent)
+            putBoolean(AppPreferencesConfig.KEY_FORCE_JSON, forceJsonSwitch.isChecked)
+            putString(AppPreferencesConfig.KEY_AUTO_TRANSLATE_TO, autoTranslateTo.text.toString())
+            putString(AppPreferencesConfig.KEY_KEEP_LANGUAGE_FOR, keepLanguageFor.text.toString())
+            putString(AppPreferencesConfig.KEY_MODEL, modelEdit.text.toString())
+            putString(AppPreferencesConfig.KEY_ENDPOINT, endpointEdit.text.toString())
+            putString(AppPreferencesConfig.KEY_API_KEY, if (apiKeyContent.equals("null") || apiKeyContent.equals("")) null else apiKeyContent)
             apply()
         }
     }
 
     fun resetSettings() {
-        val sharedPrefs = getSharedPreferences("MyAppPrefs", MODE_PRIVATE)
-        val userConfig = Resources.getSystem().configuration
-        val userLangs = userConfig.locales.toLanguageTags()
-        val userLang = userConfig.locales[0].displayLanguage
+        val sharedPrefs = AppPreferencesConfig.getSharedPreferences(this)
+        val defaultAutoTranslate = AppPreferencesConfig.defaultAutoTranslateTo(resources)
+        val defaultKeepLanguageFor = AppPreferencesConfig.defaultKeepLanguageFor(resources)
         with(sharedPrefs.edit()) {
-            putBoolean("forceJson", true)
-            putString("autoTranslateTo", userLang)
-            putString("keepLanguageFor", userLangs)
-            putString("endpoint", "https://api.openai.com/v1/")
-            putString("model", "gpt-5-nano")
-            putString("apiKey", null)
+            putBoolean(AppPreferencesConfig.KEY_FORCE_JSON, AppPreferencesConfig.DEFAULT_FORCE_JSON)
+            putString(AppPreferencesConfig.KEY_AUTO_TRANSLATE_TO, defaultAutoTranslate)
+            putString(AppPreferencesConfig.KEY_KEEP_LANGUAGE_FOR, defaultKeepLanguageFor)
+            putString(AppPreferencesConfig.KEY_ENDPOINT, AppPreferencesConfig.DEFAULT_ENDPOINT)
+            putString(AppPreferencesConfig.KEY_MODEL, AppPreferencesConfig.DEFAULT_MODEL)
+            putString(AppPreferencesConfig.KEY_API_KEY, null)
             apply()
         }
         loadSettings()

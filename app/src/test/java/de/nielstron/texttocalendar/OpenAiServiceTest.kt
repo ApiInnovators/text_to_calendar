@@ -29,9 +29,10 @@ class OpenAiServiceTest {
         
         try {
             val response = service.chatCompletion(
-                model = "gpt-5-nano",
+                model = AppPreferencesConfig.DEFAULT_MODEL,
                 prompt = prompt,
-                forceJson = true
+                reasoning_effort = AppPreferencesConfig.DEFAULT_REASONING_EFFORT,
+                forceJson = AppPreferencesConfig.DEFAULT_FORCE_JSON
             )
             
             // Verify response is not empty
@@ -56,7 +57,11 @@ class OpenAiServiceTest {
         var actualMessage = ""
         
         try {
-            service.chatCompletion("gpt-5-nano", "test prompt", true)
+            service.chatCompletion(
+                model = AppPreferencesConfig.DEFAULT_MODEL,
+                prompt = "test prompt",
+                reasoning_effort = AppPreferencesConfig.DEFAULT_REASONING_EFFORT
+            )
             fail("Should have thrown an exception with invalid API key")
         } catch (e: Exception) {
             exceptionThrown = true
