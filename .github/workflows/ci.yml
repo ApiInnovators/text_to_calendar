@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+      - name: Configure secrets
+        run: |
+          cat <<'EOF' > secrets.properties
+          DEFAULT_API_KEY="${DEFAULT_API_KEY:-test-api-key}"
+          EOF
+        env:
+          DEFAULT_API_KEY: ${{ secrets.DEFAULT_API_KEY }}
+      - name: Run unit tests with coverage
+        run: ./gradlew testDebugUnitTest jacocoTestReport
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: app/build/reports/jacoco/jacocoTestReport/html
