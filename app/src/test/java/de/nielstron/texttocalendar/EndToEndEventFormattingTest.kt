@@ -31,6 +31,87 @@ class EndToEndEventFormattingTest {
         service = OpenAiService(server.url("/").toString(), "test-api-key")
     }
 
+    @Test
+    fun llmResponseWithCestTimesIsParsedCorrectly() = runBlocking {
+        val rawEventJson = """
+            {
+              "title": "Berlin Product Meetup",
+              "summary": "Monthly sync with EU team",
+              "location": "Factory Berlin",
+              "startTime": "2025-06-10T09:00:00+02:00",
+              "endTime": "2025-06-10T11:00:00+02:00"
+            }
+        """.trimIndent()
+        enqueueResponse(rawEventJson)
+
+        val response = service.chatCompletion(
+            model = testModel,
+            prompt = "A Berlin event",
+            reasoning_effort = AppPreferencesConfig.DEFAULT_REASONING_EFFORT
+        )
+
+        val parsedEvent = Json.decodeFromString<RawEvent>(response)
+
+        assertTrue(parsedEvent.startTime!!.matches(isoWithOffsetRegex))
+        assertTrue(parsedEvent.endTime!!.matches(isoWithOffsetRegex))
+        assertEquals(LocalDateTime.of(2025, 6, 10, 9, 0), DateTimeParser.toLocalDateTime(parsedEvent.startTime!!))
+        assertEquals(LocalDateTime.of(2025, 6, 10, 11, 0), DateTimeParser.toLocalDateTime(parsedEvent.endTime!!))
+    }
+
+    @Test
+    fun llmResponseWithSingaporeTimeIsParsedCorrectly() = runBlocking {
+        val rawEventJson = """
+            {
+              "title": "Singapore Night Ride",
+              "summary": "Cycling with friends",
+              "location": "Marina Bay Sands",
+              "startTime": "2025-08-01T20:00:00+08:00",
+              "endTime": "2025-08-01T23:00:00+08:00"
+            }
+        """.trimIndent()
+        enqueueResponse(rawEventJson)
+
+        val response = service.chatCompletion(
+            model = testModel,
+            prompt = "Singapore ride",
+            reasoning_effort = AppPreferencesConfig.DEFAULT_REASONING_EFFORT
+        )
+
+        val parsedEvent = Json.decodeFromString<RawEvent>(response)
+
+        assertTrue(parsedEvent.startTime!!.matches(isoWithOffsetRegex))
+        assertTrue(parsedEvent.endTime!!.matches(isoWithOffsetRegex))
+        assertEquals(LocalDateTime.of(2025, 8, 1, 20, 0), DateTimeParser.toLocalDateTime(parsedEvent.startTime!!))
+        assertEquals(LocalDateTime.of(2025, 8, 1, 23, 0), DateTimeParser.toLocalDateTime(parsedEvent.endTime!!))
+    }
+
+    @Test
+    fun llmResponseWithNewYorkTimeIsParsedCorrectly() = runBlocking {
+        val rawEventJson = """
+            {
+              "title": "NYC Investor Dinner",
+              "summary": "Dinner with east coast investors",
+              "location": "Gramercy Tavern, NYC",
+              "startTime": "2025-03-01T18:00:00-05:00",
+              "endTime": "2025-03-01T21:00:00-05:00"
+            }
+        """.trimIndent()
+        enqueueResponse(rawEventJson)
+
+        val response = service.chatCompletion(
+            model = testModel,
+            prompt = "NYC dinner",
+            reasoning_effort = AppPreferencesConfig.DEFAULT_REASONING_EFFORT
+        )
+
+        val parsedEvent = Json.decodeFromString<RawEvent>(response)
+
+        assertTrue(parsedEvent.startTime!!.matches(isoWithOffsetRegex))
+        assertTrue(parsedEvent.endTime!!.matches(isoWithOffsetRegex))
+        assertEquals(LocalDateTime.of(2025, 3, 1, 18, 0), DateTimeParser.toLocalDateTime(parsedEvent.startTime!!))
+        assertEquals(LocalDateTime.of(2025, 3, 1, 21, 0), DateTimeParser.toLocalDateTime(parsedEvent.endTime!!))
+    }
+
     @After
     fun tearDown() {
         server.shutdown()
@@ -60,8 +141,8 @@ class EndToEndEventFormattingTest {
         assertTrue(parsedEvent.startTime!!.matches(isoWithOffsetRegex))
         assertTrue(parsedEvent.endTime!!.matches(isoWithOffsetRegex))
 
-        val startLocal = parseFlexibleDate(parsedEvent.startTime!!)
-        val endLocal = parseFlexibleDate(parsedEvent.endTime!!)
+        val startLocal = DateTimeParser.toLocalDateTime(parsedEvent.startTime!!)
+        val endLocal = DateTimeParser.toLocalDateTime(parsedEvent.endTime!!)
 
         assertEquals(LocalDateTime.of(2025, 9, 12, 19, 30), startLocal)
         assertEquals(LocalDateTime.of(2025, 9, 12, 23, 30), endLocal)
@@ -95,8 +176,8 @@ class EndToEndEventFormattingTest {
         assertTrue(parsedEvent.startTime!!.matches(isoLocalDateRegex))
         assertTrue(parsedEvent.endTime!!.matches(isoLocalDateRegex))
 
-        val startLocal = parseFlexibleDate(parsedEvent.startTime!!)
-        val endLocal = parseFlexibleDate(parsedEvent.endTime!!)
+        val startLocal = DateTimeParser.toLocalDateTime(parsedEvent.startTime!!)
+        val endLocal = DateTimeParser.toLocalDateTime(parsedEvent.endTime!!)
 
         assertEquals(LocalDateTime.of(2025, 1, 15, 19, 0), startLocal)
         assertEquals(LocalDateTime.of(2025, 1, 15, 22, 0), endLocal)
@@ -136,8 +217,8 @@ class EndToEndEventFormattingTest {
         assertTrue(parsedEvent.startTime!!.matches(isoWithOffsetRegex))
         assertTrue(parsedEvent.endTime!!.matches(isoWithOffsetRegex))
 
-        assertEquals(LocalDateTime.of(2025, 12, 4, 11, 0), parseFlexibleDate(parsedEvent.startTime!!))
-        assertEquals(LocalDateTime.of(2025, 12, 4, 17, 0), parseFlexibleDate(parsedEvent.endTime!!))
+        assertEquals(LocalDateTime.of(2025, 12, 4, 11, 0), DateTimeParser.toLocalDateTime(parsedEvent.startTime!!))
+        assertEquals(LocalDateTime.of(2025, 12, 4, 17, 0), DateTimeParser.toLocalDateTime(parsedEvent.endTime!!))
     }
 
     private fun enqueueResponse(rawEventJson: String) {
@@ -161,10 +242,4 @@ class EndToEndEventFormattingTest {
         )
     }
 
-    private fun parseFlexibleDate(timestamp: String): LocalDateTime =
-        if (isoWithOffsetRegex.matches(timestamp)) {
-            ZonedDateTime.parse(timestamp).toLocalDateTime()
-        } else {
-            LocalDateTime.parse(timestamp)
-        }
 }

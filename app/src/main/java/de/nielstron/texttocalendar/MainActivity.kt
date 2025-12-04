@@ -25,8 +25,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.time.LocalDateTime
 import java.time.ZoneOffset
-import java.time.ZonedDateTime
-import java.time.format.DateTimeParseException
 
 @Serializable
 data class RawEvent(
@@ -295,15 +293,7 @@ class MainActivity : AppCompatActivity() {
         var startTime: LocalDateTime;
         try {
             Log.d("MainActivity", "Parsing start time: ${parsedEvent.startTime}")
-            startTime = if (parsedEvent.startTime?.contains("+") == true || parsedEvent.startTime?.contains("Z") == true) {
-                // Parse timezone-aware format and convert to local time
-                Log.d("MainActivity", "Parsing as timezone-aware format")
-                ZonedDateTime.parse(parsedEvent.startTime).toLocalDateTime()
-            } else {
-                // Parse basic ISO format
-                Log.d("MainActivity", "Parsing as basic ISO format")
-                LocalDateTime.parse(parsedEvent.startTime)
-            }
+            startTime = DateTimeParser.toLocalDateTime(parsedEvent.startTime!!)
             Log.d("MainActivity", "Start time parsed successfully: $startTime")
         } catch (e: Exception) {
             Log.w("MainActivity", "Start time parsing failed: ${e.message}, using current time")
@@ -314,15 +304,7 @@ class MainActivity : AppCompatActivity() {
         try {
             Log.d("MainActivity", "Parsing end time: ${parsedEvent.endTime}")
             endTime = if (!parsedEvent.endTime.isNullOrBlank()) {
-                if (parsedEvent.endTime.contains("+") || parsedEvent.endTime.contains("Z")) {
-                    // Parse timezone-aware format and convert to local time
-                    Log.d("MainActivity", "Parsing end time as timezone-aware format")
-                    ZonedDateTime.parse(parsedEvent.endTime).toLocalDateTime()
-                } else {
-                    // Parse basic ISO format
-                    Log.d("MainActivity", "Parsing end time as basic ISO format")
-                    LocalDateTime.parse(parsedEvent.endTime)
-                }
+                DateTimeParser.toLocalDateTime(parsedEvent.endTime)
             } else {
                 Log.d("MainActivity", "No end time provided")
                 null
