@@ -9,10 +9,6 @@ import java.time.format.DateTimeParseException
  * Utility for converting ISO timestamps (with or without timezone offsets) into LocalDateTime.
  */
 object DateTimeParser {
-    fun toLocalDateTime(timestamp: String): LocalDateTime {
-        return toZonedDateTime(timestamp).toLocalDateTime()
-    }
-
     fun toZonedDateTime(
         timestamp: String,
         defaultZoneProvider: () -> ZoneId = { ZoneId.systemDefault() },

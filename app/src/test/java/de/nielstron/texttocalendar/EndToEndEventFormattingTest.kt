@@ -12,6 +12,8 @@ import org.junit.Before
 import org.junit.Test
 import java.time.Duration
 import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
 class EndToEndEventFormattingTest {
@@ -23,6 +25,7 @@ class EndToEndEventFormattingTest {
     private val isoLocalDateRegex = Regex("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}")
     private val isoWithOffsetRegex =
         Regex("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(Z|[+-]\\d{2}:\\d{2})")
+    private val deterministicZone = ZoneId.of("UTC")
 
     @Before
     fun setUp() {
@@ -54,8 +57,14 @@ class EndToEndEventFormattingTest {
 
         assertTrue(parsedEvent.startTime!!.matches(isoWithOffsetRegex))
         assertTrue(parsedEvent.endTime!!.matches(isoWithOffsetRegex))
-        assertEquals(LocalDateTime.of(2025, 6, 10, 9, 0), DateTimeParser.toLocalDateTime(parsedEvent.startTime!!))
-        assertEquals(LocalDateTime.of(2025, 6, 10, 11, 0), DateTimeParser.toLocalDateTime(parsedEvent.endTime!!))
+        assertEquals(
+            ZonedDateTime.of(LocalDateTime.of(2025, 6, 10, 9, 0), ZoneOffset.ofHours(2)),
+            DateTimeParser.toZonedDateTime(parsedEvent.startTime!!)
+        )
+        assertEquals(
+            ZonedDateTime.of(LocalDateTime.of(2025, 6, 10, 11, 0), ZoneOffset.ofHours(2)),
+            DateTimeParser.toZonedDateTime(parsedEvent.endTime!!)
+        )
     }
 
     @Test
@@ -81,8 +90,14 @@ class EndToEndEventFormattingTest {
 
         assertTrue(parsedEvent.startTime!!.matches(isoWithOffsetRegex))
         assertTrue(parsedEvent.endTime!!.matches(isoWithOffsetRegex))
-        assertEquals(LocalDateTime.of(2025, 8, 1, 20, 0), DateTimeParser.toLocalDateTime(parsedEvent.startTime!!))
-        assertEquals(LocalDateTime.of(2025, 8, 1, 23, 0), DateTimeParser.toLocalDateTime(parsedEvent.endTime!!))
+        assertEquals(
+            ZonedDateTime.of(LocalDateTime.of(2025, 8, 1, 20, 0), ZoneOffset.ofHours(8)),
+            DateTimeParser.toZonedDateTime(parsedEvent.startTime!!)
+        )
+        assertEquals(
+            ZonedDateTime.of(LocalDateTime.of(2025, 8, 1, 23, 0), ZoneOffset.ofHours(8)),
+            DateTimeParser.toZonedDateTime(parsedEvent.endTime!!)
+        )
     }
 
     @Test
@@ -108,8 +123,14 @@ class EndToEndEventFormattingTest {
 
         assertTrue(parsedEvent.startTime!!.matches(isoWithOffsetRegex))
         assertTrue(parsedEvent.endTime!!.matches(isoWithOffsetRegex))
-        assertEquals(LocalDateTime.of(2025, 3, 1, 18, 0), DateTimeParser.toLocalDateTime(parsedEvent.startTime!!))
-        assertEquals(LocalDateTime.of(2025, 3, 1, 21, 0), DateTimeParser.toLocalDateTime(parsedEvent.endTime!!))
+        assertEquals(
+            ZonedDateTime.of(LocalDateTime.of(2025, 3, 1, 18, 0), ZoneOffset.ofHours(-5)),
+            DateTimeParser.toZonedDateTime(parsedEvent.startTime!!)
+        )
+        assertEquals(
+            ZonedDateTime.of(LocalDateTime.of(2025, 3, 1, 21, 0), ZoneOffset.ofHours(-5)),
+            DateTimeParser.toZonedDateTime(parsedEvent.endTime!!)
+        )
     }
 
     @After
@@ -141,14 +162,18 @@ class EndToEndEventFormattingTest {
         assertTrue(parsedEvent.startTime!!.matches(isoWithOffsetRegex))
         assertTrue(parsedEvent.endTime!!.matches(isoWithOffsetRegex))
 
-        val startLocal = DateTimeParser.toLocalDateTime(parsedEvent.startTime!!)
-        val endLocal = DateTimeParser.toLocalDateTime(parsedEvent.endTime!!)
+        val startZoned = DateTimeParser.toZonedDateTime(parsedEvent.startTime!!)
+        val endZoned = DateTimeParser.toZonedDateTime(parsedEvent.endTime!!)
 
-        assertEquals(LocalDateTime.of(2025, 9, 12, 19, 30), startLocal)
-        assertEquals(LocalDateTime.of(2025, 9, 12, 23, 30), endLocal)
+        assertEquals(
+            ZonedDateTime.of(LocalDateTime.of(2025, 9, 12, 19, 30), ZoneOffset.ofHours(9)),
+            startZoned
+        )
+        assertEquals(
+            ZonedDateTime.of(LocalDateTime.of(2025, 9, 12, 23, 30), ZoneOffset.ofHours(9)),
+            endZoned
+        )
 
-        val startZoned = ZonedDateTime.parse(parsedEvent.startTime)
-        val endZoned = ZonedDateTime.parse(parsedEvent.endTime)
         assertEquals(Duration.ofHours(4), Duration.between(startZoned.toInstant(), endZoned.toInstant()))
     }
 
@@ -176,12 +201,12 @@ class EndToEndEventFormattingTest {
         assertTrue(parsedEvent.startTime!!.matches(isoLocalDateRegex))
         assertTrue(parsedEvent.endTime!!.matches(isoLocalDateRegex))
 
-        val startLocal = DateTimeParser.toLocalDateTime(parsedEvent.startTime!!)
-        val endLocal = DateTimeParser.toLocalDateTime(parsedEvent.endTime!!)
+        val startZoned = DateTimeParser.toZonedDateTime(parsedEvent.startTime!!) { deterministicZone }
+        val endZoned = DateTimeParser.toZonedDateTime(parsedEvent.endTime!!) { deterministicZone }
 
-        assertEquals(LocalDateTime.of(2025, 1, 15, 19, 0), startLocal)
-        assertEquals(LocalDateTime.of(2025, 1, 15, 22, 0), endLocal)
-        assertEquals(Duration.ofHours(3), Duration.between(startLocal, endLocal))
+        assertEquals(ZonedDateTime.of(LocalDateTime.of(2025, 1, 15, 19, 0), deterministicZone), startZoned)
+        assertEquals(ZonedDateTime.of(LocalDateTime.of(2025, 1, 15, 22, 0), deterministicZone), endZoned)
+        assertEquals(Duration.ofHours(3), Duration.between(startZoned, endZoned))
     }
 
     @Test
@@ -217,8 +242,14 @@ class EndToEndEventFormattingTest {
         assertTrue(parsedEvent.startTime!!.matches(isoWithOffsetRegex))
         assertTrue(parsedEvent.endTime!!.matches(isoWithOffsetRegex))
 
-        assertEquals(LocalDateTime.of(2025, 12, 4, 11, 0), DateTimeParser.toLocalDateTime(parsedEvent.startTime!!))
-        assertEquals(LocalDateTime.of(2025, 12, 4, 17, 0), DateTimeParser.toLocalDateTime(parsedEvent.endTime!!))
+        assertEquals(
+            ZonedDateTime.of(LocalDateTime.of(2025, 12, 4, 11, 0), ZoneOffset.ofHours(-8)),
+            DateTimeParser.toZonedDateTime(parsedEvent.startTime!!)
+        )
+        assertEquals(
+            ZonedDateTime.of(LocalDateTime.of(2025, 12, 4, 17, 0), ZoneOffset.ofHours(-8)),
+            DateTimeParser.toZonedDateTime(parsedEvent.endTime!!)
+        )
     }
 
     private fun enqueueResponse(rawEventJson: String) {
