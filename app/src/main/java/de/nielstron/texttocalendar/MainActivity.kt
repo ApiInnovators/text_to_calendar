@@ -206,11 +206,15 @@ class MainActivity : AppCompatActivity() {
             putExtra(CalendarContract.Events.TITLE, launchData.title)
             putExtra(CalendarContract.Events.DESCRIPTION, launchData.description)
             putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, launchData.startTimeEpochMillis)
+            putExtra(CalendarContract.Events.EVENT_TIMEZONE, launchData.startTimeZoneId)
             if (launchData.endTimeEpochMillis != null) {
                 putExtra(CalendarContract.EXTRA_EVENT_END_TIME, launchData.endTimeEpochMillis)
             }
             if (launchData.location != null) {
                 putExtra(CalendarContract.Events.EVENT_LOCATION, launchData.location)
+            }
+            if (launchData.endTimeZoneId != null) {
+                putExtra(CalendarContract.Events.EVENT_END_TIMEZONE, launchData.endTimeZoneId)
             }
         }
         

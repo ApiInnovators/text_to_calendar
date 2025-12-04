@@ -20,6 +20,8 @@ data class CalendarLaunchData(
     val location: String?,
     val startTimeEpochMillis: Long,
     val endTimeEpochMillis: Long?,
+    val startTimeZoneId: String,
+    val endTimeZoneId: String?,
 )
 
 typealias OpenAiServiceFactory = (String, String) -> OpenAiService
@@ -187,5 +189,7 @@ fun buildCalendarLaunchData(event: ProperEvent): CalendarLaunchData {
         location = event.location,
         startTimeEpochMillis = startMillis,
         endTimeEpochMillis = endMillis,
+        startTimeZoneId = event.startTime.zone.id,
+        endTimeZoneId = event.endTime?.zone?.id,
     )
 }

@@ -25,6 +25,8 @@ class CalendarLaunchDataTest {
         assertEquals(event.location, launchData.location)
         assertEquals(event.startTime.toInstant().toEpochMilli(), launchData.startTimeEpochMillis)
         assertEquals(event.endTime!!.toInstant().toEpochMilli(), launchData.endTimeEpochMillis)
+        assertEquals(event.startTime.zone.id, launchData.startTimeZoneId)
+        assertEquals(event.endTime!!.zone.id, launchData.endTimeZoneId)
     }
 
     @Test
@@ -43,5 +45,7 @@ class CalendarLaunchDataTest {
         assertEquals(event.startTime.toInstant().toEpochMilli(), launchData.startTimeEpochMillis)
         assertNull(launchData.endTimeEpochMillis)
         assertNull(launchData.location)
+        assertEquals(event.startTime.zone.id, launchData.startTimeZoneId)
+        assertNull(launchData.endTimeZoneId)
     }
 }
