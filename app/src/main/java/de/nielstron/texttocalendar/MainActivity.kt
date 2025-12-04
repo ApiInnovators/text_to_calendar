@@ -23,6 +23,7 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import java.time.ZonedDateTime
+import java.util.TimeZone
 
 @Serializable
 data class RawEvent(
@@ -199,14 +200,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openCalendarAddEvent(launchData: CalendarLaunchData) {
-        Log.d("MainActivity", "Creating calendar intent for event: ${launchData.title}")
+        Log.d("MainActivity", "Creating calendar intent for event: ${launchData}")
 
         val intent = Intent(Intent.ACTION_INSERT).apply {
             data = CalendarContract.Events.CONTENT_URI
             putExtra(CalendarContract.Events.TITLE, launchData.title)
             putExtra(CalendarContract.Events.DESCRIPTION, launchData.description)
             putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, launchData.startTimeEpochMillis)
-            putExtra(CalendarContract.Events.EVENT_TIMEZONE, launchData.startTimeZoneId)
+            putExtra(CalendarContract.Events.EVENT_TIMEZONE, TimeZone.getTimeZone("GMT" + launchData.startTimeZoneId))
             if (launchData.endTimeEpochMillis != null) {
                 putExtra(CalendarContract.EXTRA_EVENT_END_TIME, launchData.endTimeEpochMillis)
             }
@@ -214,7 +215,7 @@ class MainActivity : AppCompatActivity() {
                 putExtra(CalendarContract.Events.EVENT_LOCATION, launchData.location)
             }
             if (launchData.endTimeZoneId != null) {
-                putExtra(CalendarContract.Events.EVENT_END_TIMEZONE, launchData.endTimeZoneId)
+                putExtra(CalendarContract.Events.EVENT_END_TIMEZONE, TimeZone.getTimeZone("GMT" + launchData.endTimeZoneId))
             }
         }
         
