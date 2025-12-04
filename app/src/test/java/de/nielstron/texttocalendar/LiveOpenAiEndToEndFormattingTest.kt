@@ -10,7 +10,7 @@ class LiveOpenAiEndToEndFormattingTest {
 
     private fun ensureApiKey(): String {
         val apiKey = BuildConfig.DEFAULT_API_KEY
-        // assumeTrue("No OpenAI API key configured; skipping live test", !apiKey.isNullOrBlank())
+        assumeTrue("No OpenAI API key configured; skipping live test", !apiKey.isNullOrBlank())
         return apiKey!!
     }
 
